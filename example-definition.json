@@ -1,0 +1,21 @@
+{
+  "schemas": [
+    {
+      "name": "saddle",
+      "tables": [
+        {
+          "name": "bag",
+          "columns": [
+            {
+              "name": "id",
+              "type": "text",
+              "decimalSize": null,
+              "length": 100,
+              "nullable": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

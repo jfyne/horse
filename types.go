@@ -1,6 +1,8 @@
 package horse
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 // DatabaseType what database we are regerring to.
 type DatabaseType string
@@ -10,12 +12,24 @@ const (
 	Postgresql DatabaseType = "postgres"
 )
 
-// Definition interface, defines a database element.
-type Definition interface {
-	String() string
+// Descriptor interface, describes a database element.
+type Descriptor interface {
+
+	// Schema return the named schema.
+	Schema(*sql.DB, string) (Element, error)
+
+	// Table return the named table.
+	Table(*sql.DB, string, string) (Element, error)
+
+	// Column return the named column.
+	Column(*sql.DB, string, string, string) (Element, error)
 }
 
-// Descriptor interface, used to describe a database.
-type Descriptor interface {
-	Schemas(*sql.DB) (Definition, error)
+// Diff the difference between to definitions.
+type Diff interface {
+}
+
+// Element a datbase element.
+type Element interface {
+	String() string
 }
