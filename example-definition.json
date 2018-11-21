@@ -1,21 +1,21 @@
 {
-  "schemas": [
-    {
+  "schemas": {
+    "saddle": {
       "name": "saddle",
-      "tables": [
-        {
+      "tables": {
+        "bag": {
           "name": "bag",
-          "columns": [
-            {
+          "columns": {
+            "id": {
               "name": "id",
               "type": "text",
               "decimalSize": null,
               "length": 100,
               "nullable": false
             }
-          ]
+          }
         }
-      ]
+      }
     }
-  ]
+  }
 }

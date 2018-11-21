@@ -2,19 +2,19 @@ package horse
 
 // Definition a description of a state, either desired or current.
 type Definition struct {
-	Schemas []Schema `json:"schemas"`
+	Schemas map[string]Schema `json:"schemas"`
 }
 
 // Schema a database schema element.
 type Schema struct {
-	Name   string  `json:"name"`
-	Tables []Table `json:"tables"`
+	Name   string           `json:"name"`
+	Tables map[string]Table `json:"tables"`
 }
 
 // Table a database table element.
 type Table struct {
-	Name    string   `json:"name"`
-	Columns []Column `json:"columns"`
+	Name    string            `json:"name"`
+	Columns map[string]Column `json:"columns"`
 }
 
 // Column a database column element.

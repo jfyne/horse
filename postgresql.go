@@ -29,6 +29,14 @@ schema (
 )`, p.CatalogName, p.SchemaName, p.SchemaOwner)
 }
 
+func (p postgresSchema) Definition() (interface{}, error) {
+	schema := Schema{
+		Name:   p.SchemaName,
+		Tables: map[string]Table{},
+	}
+	return schema, nil
+}
+
 type postgresTable struct {
 	TableCatalog string `db:"table_catalog"`
 	TableSchema  string `db:"table_schema"`
@@ -44,6 +52,14 @@ table (
 	table_name:    %s,
 	talbe_type:    %s
 }`, p.TableCatalog, p.TableSchema, p.TableName, p.TableType)
+}
+
+func (p postgresTable) Definition() (interface{}, error) {
+	table := Table{
+		Name:    p.TableName,
+		Columns: map[string]Column{},
+	}
+	return table, nil
 }
 
 type postgresColumn struct {
@@ -103,31 +119,85 @@ column (
 )`, p.TableSchema, p.TableName, p.ColumnName, p.DataType)
 }
 
+func (p postgresColumn) Definition() (interface{}, error) {
+	nullable := false
+	if p.IsNullable == "YES" {
+		nullable = true
+	}
+	column := Column{
+		Name:     p.ColumnName,
+		Type:     p.DataType,
+		Nullable: nullable,
+	}
+	return column, nil
+}
+
 func newPostgresqlDescriptor() (Descriptor, error) {
 	d := postgresDescriptor{}
 	return d, nil
 }
 
-func (p postgresDescriptor) Schema(db *sql.DB, name string) (Element, error) {
+func (p postgresDescriptor) schemas(db *sql.DB, name string) ([]*postgresSchema, error) {
 	dbx := sqlx.NewDb(db, "postgres")
+	var rows *sqlx.Rows
+	var err error
+
 	q := `select
 		catalog_name,
 		schema_name,
 		schema_owner
 	from information_schema.schemata
-	where schema_name = $1`
-	var ps postgresSchema
-
-	row := dbx.QueryRowx(q, name)
-	if err := row.StructScan(&ps); err != nil {
-		return nil, err
+	`
+	if name != "" {
+		where := `where schema_name = $1`
+		rows, err = dbx.Queryx(q+where, name)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rows, err = dbx.Queryx(q)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return ps, nil
+	defer rows.Close()
+
+	schemas := []*postgresSchema{}
+	for rows.Next() {
+		var ps postgresSchema
+		if err := rows.StructScan(&ps); err != nil {
+			return nil, err
+		}
+		schemas = append(schemas, &ps)
+	}
+
+	return schemas, nil
 }
 
-func (p postgresDescriptor) Table(db *sql.DB, schema, name string) (Element, error) {
+func (p postgresDescriptor) schema(db *sql.DB, name string) (*postgresSchema, error) {
+	elements, err := p.schemas(db, name)
+	if err != nil {
+		return nil, err
+	}
+	if len(elements) == 0 {
+		return nil, ErrNotFound
+	}
+	if len(elements) != 1 {
+		return nil, ErrTooManyResults
+	}
+	return elements[0], nil
+}
+
+func (p postgresDescriptor) Schema(db *sql.DB, name string) (Element, error) {
+	return p.schema(db, name)
+}
+
+func (p postgresDescriptor) tables(db *sql.DB, schema, name string) ([]*postgresTable, error) {
 	dbx := sqlx.NewDb(db, "postgres")
+	var rows *sqlx.Rows
+	var err error
+
 	q := `select
 		table_catalog,
 		table_schema,
@@ -135,31 +205,149 @@ func (p postgresDescriptor) Table(db *sql.DB, schema, name string) (Element, err
 		table_type
 	from information_schema.tables
 	where table_schema = $1
-	and table_name = $2`
-	var pt postgresTable
-
-	row := dbx.QueryRowx(q, schema, name)
-	if err := row.StructScan(&pt); err != nil {
-		return nil, err
+	`
+	if name != "" {
+		where := `and table_name = $2`
+		rows, err = dbx.Queryx(q+where, schema, name)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rows, err = dbx.Queryx(q, schema)
+		if err != nil {
+			return nil, err
+		}
 	}
+	defer rows.Close()
 
-	return pt, nil
+	tables := []*postgresTable{}
+	for rows.Next() {
+		var pt postgresTable
+		if err := rows.StructScan(&pt); err != nil {
+			return nil, err
+		}
+		tables = append(tables, &pt)
+
+	}
+	return tables, nil
 }
 
-func (p postgresDescriptor) Column(db *sql.DB, schema, table, column string) (Element, error) {
+func (p postgresDescriptor) table(db *sql.DB, schema, name string) (*postgresTable, error) {
+	elements, err := p.tables(db, schema, name)
+	if err != nil {
+		return nil, err
+	}
+	if len(elements) == 0 {
+		return nil, ErrNotFound
+	}
+	if len(elements) != 1 {
+		return nil, ErrTooManyResults
+	}
+	return elements[0], nil
+}
+
+func (p postgresDescriptor) Table(db *sql.DB, schema, name string) (Element, error) {
+	return p.table(db, schema, name)
+}
+
+func (p postgresDescriptor) columns(db *sql.DB, schema, table, column string) ([]*postgresColumn, error) {
 	dbx := sqlx.NewDb(db, "postgres")
+	var rows *sqlx.Rows
+	var err error
+
 	q := `select
 		*
 	from information_schema.columns
 	where table_schema = $1
 	and table_name = $2
-	and column_name = $3`
-	var pc postgresColumn
+	`
+	if column != "" {
+		where := `and column_name = $3`
+		rows, err = dbx.Queryx(q+where, schema, table, column)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rows, err = dbx.Queryx(q, schema, table)
+		if err != nil {
+			return nil, err
+		}
+	}
+	defer rows.Close()
 
-	row := dbx.QueryRowx(q, schema, table, column)
-	if err := row.StructScan(&pc); err != nil {
+	columns := []*postgresColumn{}
+	for rows.Next() {
+		var pc postgresColumn
+		if err := rows.StructScan(&pc); err != nil {
+			return nil, err
+		}
+		columns = append(columns, &pc)
+	}
+	return columns, nil
+}
+
+func (p postgresDescriptor) column(db *sql.DB, schema, table, column string) (*postgresColumn, error) {
+	elements, err := p.columns(db, schema, table, column)
+	if err != nil {
 		return nil, err
 	}
+	if len(elements) == 0 {
+		return nil, ErrNotFound
+	}
+	if len(elements) != 1 {
+		return nil, ErrTooManyResults
+	}
+	return elements[0], nil
+}
 
-	return pc, nil
+func (p postgresDescriptor) Column(db *sql.DB, schema, table, column string) (Element, error) {
+	return p.column(db, schema, table, column)
+}
+
+func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (*Definition, error) {
+	d := Definition{
+		Schemas: map[string]Schema{},
+	}
+
+	for _, schemaName := range schemas {
+		schema, err := p.schema(db, schemaName)
+		if err != nil {
+			return nil, err
+		}
+		s, err := schema.Definition()
+		if err != nil {
+			return nil, err
+		}
+		sdef, _ := s.(Schema)
+		d.Schemas[sdef.Name] = sdef
+
+		tables, err := p.tables(db, schemaName, "")
+		if err != nil {
+			return nil, err
+		}
+		for _, table := range tables {
+			t, err := table.Definition()
+			if err != nil {
+				return nil, err
+			}
+			tdef, _ := t.(Table)
+			d.Schemas[sdef.Name].Tables[tdef.Name] = tdef
+
+			columns, err := p.columns(db, schemaName, tdef.Name, "")
+			if err != nil {
+				return nil, err
+			}
+
+			for _, column := range columns {
+				c, err := column.Definition()
+				if err != nil {
+					return nil, err
+				}
+				cdef, _ := c.(Column)
+				d.Schemas[sdef.Name].Tables[tdef.Name].Columns[cdef.Name] = cdef
+			}
+		}
+	}
+
+	return &d, nil
 }

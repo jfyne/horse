@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDescriptor(t *testing.T) {
+func TestSchema(t *testing.T) {
 	d, err := newPostgresqlDescriptor()
 	if err != nil {
 		t.Error(err)
@@ -21,7 +21,7 @@ func TestDescriptor(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	ps, ok := s.(postgresSchema)
+	ps, ok := s.(*postgresSchema)
 	if !ok {
 		t.Error("Cannot convert to postgres schema")
 		return
@@ -30,13 +30,21 @@ func TestDescriptor(t *testing.T) {
 		t.Error("Unmatching schema name")
 		return
 	}
+}
+
+func TestTable(t *testing.T) {
+	d, err := newPostgresqlDescriptor()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	ta, err := d.Table(db, "public", "test1")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	pt, ok := ta.(postgresTable)
+	pt, ok := ta.(*postgresTable)
 	if !ok {
 		t.Error("Cannot convert to postgres table")
 		return
@@ -45,13 +53,21 @@ func TestDescriptor(t *testing.T) {
 		t.Error("Unmatching table name")
 		return
 	}
+}
+
+func TestColumn(t *testing.T) {
+	d, err := newPostgresqlDescriptor()
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	co, err := d.Column(db, "public", "test1", "first")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	pc, ok := co.(postgresColumn)
+	pc, ok := co.(*postgresColumn)
 	if !ok {
 		t.Error("Cannot conver to postgres column")
 		return
@@ -61,8 +77,46 @@ func TestDescriptor(t *testing.T) {
 		t.Error("Unmatching column name")
 		return
 	}
+}
 
-	t.Error(ps)
-	t.Error(pt)
-	t.Error(pc)
+func TestDefinition(t *testing.T) {
+	d, err := newPostgresqlDescriptor()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	def, err := d.Definition(db, "public")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	s, ok := def.Schemas["public"]
+	if !ok {
+		t.Error("Schema public not present in definition")
+		return
+	}
+
+	ta, ok := s.Tables["test1"]
+	if !ok {
+		t.Error("Table test1 not present in definition")
+		return
+	}
+
+	col, ok := ta.Columns["second"]
+	if !ok {
+		t.Error("Column second not present in definition")
+		return
+	}
+
+	if col.Name != "second" {
+		t.Error("Column name not filled")
+		return
+	}
+
+	if col.Type != "numeric" {
+		t.Error("Column data type not filled")
+		return
+	}
 }
