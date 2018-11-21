@@ -5,7 +5,7 @@ import (
 )
 
 func TestCompare(t *testing.T) {
-	_, err := NewDefinitionFromJSONFile("example-definition.json")
+	_, err := NewDefinitionFromFile("example-definition.json")
 	if err != nil {
 		t.Error(err)
 		return

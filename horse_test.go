@@ -37,3 +37,36 @@ func teardown() error {
 	}
 	return db.Close()
 }
+
+func TestJSON(t *testing.T) {
+	good := `{ "schemas": { "public": { "name": "public", "tables": { "test1": {
+		"name": "test1",
+		"columns": {
+			"first": {
+				"name": "first",
+				"type": "text"
+			},
+			"second": {
+				"name": "second",
+				"type": "decimal"
+			},
+			"third": {
+				"name": "third",
+				"type": "integer"
+			}
+		}
+	}}}}}`
+
+	_, err := NewDefinitionFromJSON(good)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	bad := `{"aaa": "bbb", "ccc": {}}`
+
+	if _, err := NewDefinitionFromJSON(bad); err == nil {
+		t.Error("Bad JSON not flagged")
+		return
+	}
+}

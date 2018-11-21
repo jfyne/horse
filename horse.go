@@ -1,12 +1,25 @@
 package horse
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 )
 
-// NewDefinitionFromJSONFile loads a definition from a file.
-func NewDefinitionFromJSONFile(filename string) (*Definition, error) {
+// NewDefinitionFromJSON from JSON create a definition.
+func NewDefinitionFromJSON(definition string) (*Definition, error) {
+	b := bytes.NewBuffer([]byte(definition))
+	dec := json.NewDecoder(b)
+	var d Definition
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+
+	return &d, nil
+}
+
+// NewDefinitionFromFile loads a definition from a file.
+func NewDefinitionFromFile(filename string) (*Definition, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
