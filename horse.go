@@ -3,19 +3,14 @@ package horse
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 )
 
 // NewDefinitionFromJSON from JSON create a definition.
 func NewDefinitionFromJSON(definition string) (*Definition, error) {
 	b := bytes.NewBuffer([]byte(definition))
-	dec := json.NewDecoder(b)
-	var d Definition
-	if err := dec.Decode(&d); err != nil {
-		return nil, err
-	}
-
-	return &d, nil
+	return newDefinition(b)
 }
 
 // NewDefinitionFromFile loads a definition from a file.
@@ -25,11 +20,18 @@ func NewDefinitionFromFile(filename string) (*Definition, error) {
 		return nil, err
 	}
 	defer f.Close()
+	return newDefinition(f)
+}
 
-	dec := json.NewDecoder(f)
+func newDefinition(r io.Reader) (*Definition, error) {
+	dec := json.NewDecoder(r)
 	var d Definition
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
+	}
+
+	if len(d.Schemas) == 0 {
+		return nil, ErrEmptyDefinition
 	}
 
 	return &d, nil

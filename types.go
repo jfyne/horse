@@ -4,11 +4,22 @@ import (
 	"database/sql"
 )
 
+// Action performed by horse.
+type Action string
+
+// Horse operation types.
+const (
+	CreateSchema Action = "create-schema"
+	CreateTable  Action = "create-table"
+	CreateColumn Action = "create-column"
+	AlterColumn  Action = "alter-column"
+)
+
 // DatabaseType what database we are regerring to.
 type DatabaseType string
 
+// Horse supported datbases.
 const (
-	// Postgresql the postgresql database.
 	Postgresql DatabaseType = "postgres"
 )
 
@@ -28,11 +39,7 @@ type Descriptor interface {
 	Definition(*sql.DB, ...string) (*Definition, error)
 }
 
-// Diff the difference between to definitions.
-type Diff interface {
-}
-
-// Element a datbase element.
+// Element a database element.
 type Element interface {
 
 	// Create the definition from the element.
