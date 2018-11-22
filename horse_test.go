@@ -10,6 +10,24 @@ import (
 
 var db *sql.DB
 
+var testDef = `{ "schemas": { "public": { "name": "public", "tables": { "test1": {
+		"name": "test1",
+		"columns": {
+			"first": {
+				"name": "first",
+				"type": "text"
+			},
+			"second": {
+				"name": "second",
+				"type": "decimal"
+			},
+			"third": {
+				"name": "third",
+				"type": "integer"
+			}
+		}
+	}}}}}`
+
 func TestMain(m *testing.M) {
 	if err := setup(); err != nil {
 		panic(err)
@@ -39,25 +57,7 @@ func teardown() error {
 }
 
 func TestJSON(t *testing.T) {
-	good := `{ "schemas": { "public": { "name": "public", "tables": { "test1": {
-		"name": "test1",
-		"columns": {
-			"first": {
-				"name": "first",
-				"type": "text"
-			},
-			"second": {
-				"name": "second",
-				"type": "decimal"
-			},
-			"third": {
-				"name": "third",
-				"type": "integer"
-			}
-		}
-	}}}}}`
-
-	_, err := NewDefinitionFromJSON(good)
+	_, err := NewDefinitionFromJSON(testDef)
 	if err != nil {
 		t.Error(err)
 		return
@@ -67,6 +67,37 @@ func TestJSON(t *testing.T) {
 
 	if _, err := NewDefinitionFromJSON(bad); err == nil {
 		t.Error("Bad JSON not flagged")
+		return
+	}
+}
+
+func TestDescriptor(t *testing.T) {
+	descriptor, err := NewDescriptor(Postgresql)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	dbDefinition, err := descriptor.Definition(db, "public")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	jsonDefinition, err := NewDefinitionFromJSON(testDef)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	ops, err := compare(dbDefinition, jsonDefinition)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(ops) != 0 {
+		t.Error("Definitions should match")
 		return
 	}
 }
