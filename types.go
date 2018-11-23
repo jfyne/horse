@@ -37,6 +37,10 @@ type Descriptor interface {
 
 	// Definition creates a definition from the descriptor.
 	Definition(*sql.DB, ...string) (*Definition, error)
+
+	// Migrations takes a slice of Operations and converts them into
+	// steps to complete the Operation.
+	Migrations(*sql.DB, []Operation) ([]string, error)
 }
 
 // Element a database element.

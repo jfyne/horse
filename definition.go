@@ -28,70 +28,72 @@ type Column struct {
 	Nullable    bool   `json:"nullable"`
 }
 
-type operation struct {
+// Operation an action to perform on an element.
+type Operation struct {
 	action Action
 	schema *Schema
 	table  *Table
 	column *Column
 }
 
-func compare(source, target *Definition) ([]operation, error) {
-	operations := []operation{}
+func compare(source, target *Definition) ([]Operation, error) {
+	Operations := []Operation{}
 
 	for targetSchemaName, targetSchema := range target.Schemas {
 		sourceSchema, ok := source.Schemas[targetSchemaName]
 		if !ok {
-			op := operation{
+			op := Operation{
 				action: CreateSchema,
 				schema: &targetSchema,
 			}
-			operations = append(operations, op)
-			continue
+			Operations = append(Operations, op)
 		}
 		ops, err := compareTables(&sourceSchema, &targetSchema)
 		if err != nil {
 			return nil, err
 		}
-		operations = append(operations, ops...)
+		Operations = append(Operations, ops...)
 	}
 
-	return operations, nil
+	return Operations, nil
 }
 
-func compareTables(source, target *Schema) ([]operation, error) {
-	operations := []operation{}
+func compareTables(source, target *Schema) ([]Operation, error) {
+	Operations := []Operation{}
 
 	for targetTableName, targetTable := range target.Tables {
 		sourceTable, ok := source.Tables[targetTableName]
 		if !ok {
-			op := operation{
+			op := Operation{
 				action: CreateTable,
+				schema: target,
 				table:  &targetTable,
 			}
-			operations = append(operations, op)
-			continue
+			Operations = append(Operations, op)
 		}
-		ops, err := compareColumns(&sourceTable, &targetTable)
+		ops, err := compareColumns(&sourceTable, target, &targetTable)
 		if err != nil {
 			return nil, err
 		}
-		operations = append(operations, ops...)
+		Operations = append(Operations, ops...)
 	}
 
-	return operations, nil
+	return Operations, nil
 }
 
-func compareColumns(source, target *Table) ([]operation, error) {
-	operations := []operation{}
+func compareColumns(source *Table, schema *Schema, target *Table) ([]Operation, error) {
+	Operations := []Operation{}
 
 	for targetColumnName, targetColumn := range target.Columns {
 		sourceColumn, ok := source.Columns[targetColumnName]
 		if !ok {
-			op := operation{
+			op := Operation{
 				action: CreateColumn,
+				schema: schema,
+				table:  target,
 				column: &targetColumn,
 			}
-			operations = append(operations, op)
+			Operations = append(Operations, op)
 			continue
 		}
 		alteration := false
@@ -121,13 +123,15 @@ func compareColumns(source, target *Table) ([]operation, error) {
 		}
 
 		if alteration {
-			op := operation{
+			op := Operation{
 				action: AlterColumn,
+				schema: schema,
+				table:  target,
 				column: &targetColumn,
 			}
-			operations = append(operations, op)
+			Operations = append(Operations, op)
 		}
 	}
 
-	return operations, nil
+	return Operations, nil
 }

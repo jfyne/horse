@@ -7,6 +7,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+const createColumnTemplate = "createColumnTemplate"
+
 type postgresDescriptor struct {
 }
 
@@ -350,4 +352,62 @@ func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (*Definiti
 	}
 
 	return &d, nil
+}
+
+func (p postgresDescriptor) Migrations(db *sql.DB, operations []Operation) ([]string, error) {
+	steps := []string{}
+
+	for _, operation := range operations {
+		switch operation.action {
+		case CreateSchema:
+			q, err := createSchema(operation.schema.Name)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, q)
+		case CreateTable:
+			q, err := createTable(operation.schema.Name, operation.table.Name)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, q)
+		case CreateColumn:
+			q, err := createColumn(operation.schema.Name, operation.table.Name, operation.column)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, q)
+		case AlterColumn:
+		}
+	}
+
+	return steps, nil
+}
+
+func createSchema(schema string) (string, error) {
+	return fmt.Sprintf("create schema %s", schema), nil
+}
+
+func createTable(schema, table string) (string, error) {
+	sql := `create table %s.%s ()`
+	return fmt.Sprintf(sql, schema, table), nil
+}
+
+func createColumn(schema, table string, column *Column) (string, error) {
+	null := ""
+	if !column.Nullable {
+		null = "not null"
+	}
+	def := ""
+
+	sql := fmt.Sprintf(`alter table %s.%s add column %s %s %s %s`,
+		schema,
+		table,
+		column.Name,
+		column.Type,
+		null,
+		def,
+	)
+
+	return sql, nil
 }
