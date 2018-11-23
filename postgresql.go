@@ -393,12 +393,11 @@ func createTable(schema, table string) (string, error) {
 	return fmt.Sprintf(sql, schema, table), nil
 }
 
-func createColumn(schema, table string, column *Column) (string, error) {
+func createColumn(schema, table string, column Column) (string, error) {
 	null := ""
 	if !column.Nullable {
 		null = "not null"
 	}
-	def := ""
 
 	sql := fmt.Sprintf(`alter table %s.%s add column %s %s %s %s`,
 		schema,
@@ -406,8 +405,12 @@ func createColumn(schema, table string, column *Column) (string, error) {
 		column.Name,
 		column.Type,
 		null,
-		def,
+		column.Default,
 	)
 
 	return sql, nil
+}
+
+func deprecateColumn(schema, table string, column Column) (string, error) {
+	return "alter", nil
 }

@@ -21,19 +21,18 @@ type Table struct {
 
 // Column a database column element.
 type Column struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	DecimalSize *int   `json:"decimalSize"`
-	Length      *int   `json:"length"`
-	Nullable    bool   `json:"nullable"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Nullable bool   `json:"nullable"`
+	Default  string `json:"default"`
 }
 
 // Operation an action to perform on an element.
 type Operation struct {
 	action Action
-	schema *Schema
-	table  *Table
-	column *Column
+	schema Schema
+	table  Table
+	column Column
 }
 
 func compare(source, target *Definition) ([]Operation, error) {
@@ -44,7 +43,7 @@ func compare(source, target *Definition) ([]Operation, error) {
 		if !ok {
 			op := Operation{
 				action: CreateSchema,
-				schema: &targetSchema,
+				schema: targetSchema,
 			}
 			Operations = append(Operations, op)
 		}
@@ -66,8 +65,8 @@ func compareTables(source, target *Schema) ([]Operation, error) {
 		if !ok {
 			op := Operation{
 				action: CreateTable,
-				schema: target,
-				table:  &targetTable,
+				schema: *target,
+				table:  targetTable,
 			}
 			Operations = append(Operations, op)
 		}
@@ -89,9 +88,9 @@ func compareColumns(source *Table, schema *Schema, target *Table) ([]Operation, 
 		if !ok {
 			op := Operation{
 				action: CreateColumn,
-				schema: schema,
-				table:  target,
-				column: &targetColumn,
+				schema: *schema,
+				table:  *target,
+				column: targetColumn,
 			}
 			Operations = append(Operations, op)
 			continue
@@ -101,33 +100,21 @@ func compareColumns(source *Table, schema *Schema, target *Table) ([]Operation, 
 			log.Println("change", "column", "type", targetColumn.Type, sourceColumn.Type)
 			alteration = true
 		}
-		if targetColumn.DecimalSize == nil && sourceColumn.DecimalSize == nil {
-			break
-		} else if (targetColumn.DecimalSize == nil && sourceColumn.DecimalSize != nil) ||
-			(targetColumn.DecimalSize != nil && sourceColumn.DecimalSize == nil) ||
-			(*targetColumn.DecimalSize != *sourceColumn.DecimalSize) {
-			log.Println("change", "column", "decimalsize", *targetColumn.DecimalSize, *sourceColumn.DecimalSize)
-			alteration = true
-		}
-		if targetColumn.Length == nil && sourceColumn.DecimalSize == nil {
-			break
-		} else if (targetColumn.Length == nil && sourceColumn.Length != nil) ||
-			(targetColumn.Length != nil && sourceColumn.Length == nil) ||
-			(*targetColumn.Length != *sourceColumn.Length) {
-			log.Println("change", "column", "length", *targetColumn.Length, *sourceColumn.Length)
-			alteration = true
-		}
 		if targetColumn.Nullable != sourceColumn.Nullable {
 			log.Println("change", "column", "nullable", targetColumn.Nullable, sourceColumn.Nullable)
+			alteration = true
+		}
+		if targetColumn.Default != sourceColumn.Default {
+			log.Println("change", "column", "default", targetColumn.Default, sourceColumn.Default)
 			alteration = true
 		}
 
 		if alteration {
 			op := Operation{
 				action: AlterColumn,
-				schema: schema,
-				table:  target,
-				column: &targetColumn,
+				schema: *schema,
+				table:  *target,
+				column: targetColumn,
 			}
 			Operations = append(Operations, op)
 		}

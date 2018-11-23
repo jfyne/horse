@@ -15,15 +15,18 @@ var testDef = `{ "schemas": { "public": { "name": "public", "tables": { "test1":
 		"columns": {
 			"first": {
 				"name": "first",
-				"type": "text"
+				"type": "text",
+				"nullable": true
 			},
 			"second": {
 				"name": "second",
-				"type": "decimal"
+				"type": "decimal",
+				"nullable": true
 			},
 			"third": {
 				"name": "third",
-				"type": "integer"
+				"type": "integer",
+				"nullable": true
 			}
 		}
 	}}}}}`
@@ -97,6 +100,10 @@ func TestDescriptor(t *testing.T) {
 	}
 
 	if len(ops) != 0 {
+		migs, _ := descriptor.Migrations(db, ops)
+		for _, m := range migs {
+			t.Error(m)
+		}
 		t.Error("Definitions should match")
 		return
 	}
