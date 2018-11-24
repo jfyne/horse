@@ -7,6 +7,12 @@ import (
 	"os"
 )
 
+// OperationsToMatch takes two definitions and returns the required
+// operations to make the source definition match the target.
+func OperationsToMatch(source, target Definition) ([]Operation, error) {
+	return matchDef(source, target)
+}
+
 // NewDefinitionFromJSON from JSON create a definition.
 func NewDefinitionFromJSON(definition string) (Definition, error) {
 	b := bytes.NewBuffer([]byte(definition))
