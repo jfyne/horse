@@ -27,7 +27,7 @@ func TestCompare(t *testing.T) {
 		return
 	}
 
-	def2.Schemas["a"] = Schema{Name: "a"}
+	def2.stdSchemas["a"] = Schema{Name: "a"}
 	ops, err = compare(def1, def2)
 	if err != nil {
 		t.Error(err)

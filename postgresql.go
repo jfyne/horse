@@ -12,6 +12,10 @@ const createColumnTemplate = "createColumnTemplate"
 type postgresDescriptor struct {
 }
 
+type postgresDefinition struct {
+	StdDefinition
+}
+
 type postgresSchema struct {
 	CatalogName                string `db:"catalog_name"`
 	SchemaName                 string `db:"schema_name"`
@@ -306,11 +310,8 @@ func (p postgresDescriptor) Column(db *sql.DB, schema, table, column string) (El
 	return p.column(db, schema, table, column)
 }
 
-func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (*Definition, error) {
-	d := Definition{
-		Schemas: map[string]Schema{},
-	}
-
+func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (Definition, error) {
+	createdSchemas := map[string]Schema{}
 	for _, schemaName := range schemas {
 		schema, err := p.schema(db, schemaName)
 		if err != nil {
@@ -321,7 +322,7 @@ func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (*Definiti
 			return nil, err
 		}
 		sdef, _ := s.(Schema)
-		d.Schemas[sdef.Name] = sdef
+		createdSchemas[sdef.Name] = sdef
 
 		tables, err := p.tables(db, schemaName, "")
 		if err != nil {
@@ -333,7 +334,7 @@ func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (*Definiti
 				return nil, err
 			}
 			tdef, _ := t.(Table)
-			d.Schemas[sdef.Name].Tables[tdef.Name] = tdef
+			createdSchemas[sdef.Name].Tables[tdef.Name] = tdef
 
 			columns, err := p.columns(db, schemaName, tdef.Name, "")
 			if err != nil {
@@ -346,9 +347,14 @@ func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (*Definiti
 					return nil, err
 				}
 				cdef, _ := c.(Column)
-				d.Schemas[sdef.Name].Tables[tdef.Name].Columns[cdef.Name] = cdef
+				createdSchemas[sdef.Name].Tables[tdef.Name].Columns[cdef.Name] = cdef
 			}
 		}
+	}
+	d := postgresDefinition{
+		StdDefinition{
+			stdSchemas: createdSchemas,
+		},
 	}
 
 	return &d, nil
@@ -413,4 +419,17 @@ func createColumn(schema, table string, column Column) (string, error) {
 
 func deprecateColumn(schema, table string, column Column) (string, error) {
 	return "alter", nil
+}
+
+func getPGType(db *sql.DB, target string) (string, error) {
+	dbx := sqlx.NewDb(db, "postgres")
+	q := "select $1::regtype"
+	row := dbx.QueryRowx(q, target)
+
+	var pgType string
+	if err := row.Scan(&pgType); err != nil {
+		return "", err
+	}
+
+	return pgType, nil
 }

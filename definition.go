@@ -2,9 +2,14 @@ package horse
 
 import "log"
 
-// Definition a description of a state, either desired or current.
-type Definition struct {
-	Schemas map[string]Schema `json:"schemas"`
+// StdDefinition a description of a state, either desired or current.
+type StdDefinition struct {
+	stdSchemas map[string]Schema `json:"schemas"`
+}
+
+// Schemas get the schemas.
+func (s StdDefinition) Schemas() map[string]Schema {
+	return s.stdSchemas
 }
 
 // Schema a database schema element.
@@ -35,11 +40,12 @@ type Operation struct {
 	column Column
 }
 
-func compare(source, target *Definition) ([]Operation, error) {
+func compare(source, target Definition) ([]Operation, error) {
 	Operations := []Operation{}
 
-	for targetSchemaName, targetSchema := range target.Schemas {
-		sourceSchema, ok := source.Schemas[targetSchemaName]
+	sourceSchemas := source.Schemas()
+	for targetSchemaName, targetSchema := range target.Schemas() {
+		sourceSchema, ok := sourceSchemas[targetSchemaName]
 		if !ok {
 			op := Operation{
 				action: CreateSchema,

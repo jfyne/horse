@@ -36,7 +36,7 @@ type Descriptor interface {
 	Column(*sql.DB, string, string, string) (Element, error)
 
 	// Definition creates a definition from the descriptor.
-	Definition(*sql.DB, ...string) (*Definition, error)
+	Definition(*sql.DB, ...string) (Definition, error)
 
 	// Migrations takes a slice of Operations and converts them into
 	// steps to complete the Operation.
@@ -50,4 +50,11 @@ type Element interface {
 	Definition() (interface{}, error)
 
 	String() string
+}
+
+// Definition a description of a schema and its tables.
+type Definition interface {
+
+	// Get the schemas for the definition.
+	Schemas() map[string]Schema
 }

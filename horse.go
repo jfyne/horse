@@ -8,13 +8,13 @@ import (
 )
 
 // NewDefinitionFromJSON from JSON create a definition.
-func NewDefinitionFromJSON(definition string) (*Definition, error) {
+func NewDefinitionFromJSON(definition string) (Definition, error) {
 	b := bytes.NewBuffer([]byte(definition))
 	return newDefinition(b)
 }
 
 // NewDefinitionFromFile loads a definition from a file.
-func NewDefinitionFromFile(filename string) (*Definition, error) {
+func NewDefinitionFromFile(filename string) (Definition, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -23,18 +23,18 @@ func NewDefinitionFromFile(filename string) (*Definition, error) {
 	return newDefinition(f)
 }
 
-func newDefinition(r io.Reader) (*Definition, error) {
+func newDefinition(r io.Reader) (Definition, error) {
 	dec := json.NewDecoder(r)
-	var d Definition
+	var d StdDefinition
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}
 
-	if len(d.Schemas) == 0 {
+	if len(d.Schemas()) == 0 {
 		return nil, ErrEmptyDefinition
 	}
 
-	return &d, nil
+	return d, nil
 }
 
 // NewDescriptor returns a Descriptor for a type of database.

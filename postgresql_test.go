@@ -120,3 +120,24 @@ func TestDefinition(t *testing.T) {
 		return
 	}
 }
+
+func TestTypeMap(t *testing.T) {
+	good := map[string]string{
+		"decimal":      "numeric",
+		"varchar":      "character varying",
+		"varchar(255)": "character varying",
+		"text":         "text",
+	}
+
+	for source, target := range good {
+		pgType, err := getPGType(db, source)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if pgType != target {
+			t.Error(target, source)
+		}
+	}
+
+}
