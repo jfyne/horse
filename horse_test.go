@@ -74,14 +74,14 @@ func TestJSON(t *testing.T) {
 	}
 }
 
-func TestDescriptor(t *testing.T) {
-	descriptor, err := NewDescriptor(Postgresql)
+func TestDatabase(t *testing.T) {
+	database, err := NewDatabase(Postgresql)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	dbDefinition, err := descriptor.Definition(db, "public")
+	dbDefinition, err := database.Definition(db, "public")
 	if err != nil {
 		t.Error(err)
 		return
@@ -100,7 +100,7 @@ func TestDescriptor(t *testing.T) {
 	}
 
 	if len(ops) != 0 {
-		migs, _ := descriptor.Migrations(db, ops)
+		migs, _ := database.Migrations(db, ops)
 		for _, m := range migs {
 			t.Error(m)
 		}

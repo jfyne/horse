@@ -2,10 +2,12 @@ package horse
 
 // Column a database column element.
 type Column struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Nullable bool   `json:"nullable"`
-	Default  string `json:"default"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Length    int64  `json:"length"`
+	Precision string `json:"precision"`
+	Nullable  bool   `json:"nullable"`
+	Default   string `json:"default"`
 }
 
 // Table a database table element.

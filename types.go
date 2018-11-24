@@ -23,8 +23,8 @@ const (
 	Postgresql DatabaseType = "postgres"
 )
 
-// Descriptor interface, describes a database element.
-type Descriptor interface {
+// Database interface, describes a database.
+type Database interface {
 
 	// Schema return the named schema.
 	Schema(*sql.DB, string) (Element, error)
@@ -35,7 +35,7 @@ type Descriptor interface {
 	// Column return the named column.
 	Column(*sql.DB, string, string, string) (Element, error)
 
-	// Definition creates a definition from the descriptor.
+	// Definition creates a definition from the database.
 	Definition(*sql.DB, ...string) (Definition, error)
 
 	// Migrations takes a slice of Operations and converts them into

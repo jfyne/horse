@@ -12,12 +12,14 @@
             },
             "name": {
               "name": "name",
-              "type": "varchar(255)",
+              "type": "varchar",
+              "length": 255,
               "nullable": false
             },
             "money": {
               "name": "money",
-              "type": "numeric(24,10)",
+              "type": "numeric",
+              "precision": "24,10",
               "nullable": true
             },
             "date": {

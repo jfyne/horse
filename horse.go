@@ -13,10 +13,20 @@ func OperationsToMatch(source, target Definition) ([]Operation, error) {
 	return matchDef(source, target)
 }
 
+// NewDatabase returns a Database for a type.
+func NewDatabase(d DatabaseType) (Database, error) {
+	switch d {
+	case Postgresql:
+		return newPostgresqlDatabase()
+	}
+
+	return nil, ErrUnknownDatabase
+}
+
 // NewDefinitionFromJSON from JSON create a definition.
 func NewDefinitionFromJSON(definition string) (Definition, error) {
 	b := bytes.NewBuffer([]byte(definition))
-	return newDefinition(b)
+	return newJSONDefinition(b)
 }
 
 // NewDefinitionFromFile loads a definition from a file.
@@ -26,10 +36,10 @@ func NewDefinitionFromFile(filename string) (Definition, error) {
 		return nil, err
 	}
 	defer f.Close()
-	return newDefinition(f)
+	return newJSONDefinition(f)
 }
 
-func newDefinition(r io.Reader) (Definition, error) {
+func newJSONDefinition(r io.Reader) (Definition, error) {
 	dec := json.NewDecoder(r)
 	var d jsonDefinition
 	if err := dec.Decode(&d); err != nil {
@@ -41,14 +51,4 @@ func newDefinition(r io.Reader) (Definition, error) {
 	}
 
 	return d, nil
-}
-
-// NewDescriptor returns a Descriptor for a type of database.
-func NewDescriptor(d DatabaseType) (Descriptor, error) {
-	switch d {
-	case Postgresql:
-		return newPostgresqlDescriptor()
-	}
-
-	return nil, ErrUnknownDatabase
 }

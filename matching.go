@@ -1,6 +1,8 @@
 package horse
 
-import "log"
+import (
+	"log"
+)
 
 // Operation an action to perform on an element.
 type Operation struct {
@@ -73,21 +75,42 @@ func compareColumns(sourceDef Definition, source *Table, schema *Schema, target 
 			Operations = append(Operations, op)
 			continue
 		}
+
 		alteration := false
+
+		// Type
 		expectedType, err := sourceDef.ExpectedType(targetColumn.Type)
 		if err != nil {
 			return nil, err
 		}
 		if expectedType != sourceColumn.Type {
-			log.Println("change", "column", "type", targetColumn.Type, sourceColumn.Type)
+			log.Println("change", "column", "type", targetColumn.Name, targetColumn.Type, sourceColumn.Type)
 			alteration = true
 		}
+
+		// Length
+		if targetColumn.Length != sourceColumn.Length {
+			log.Println("change", "column", "length", targetColumn.Name, targetColumn.Length, sourceColumn.Length)
+			alteration = true
+		}
+
+		// Precision
+		// If precision is blank, we are taking teh default. If it is something other than blank we are
+		// potentially changing.
+		if targetColumn.Precision != "" && (targetColumn.Precision != sourceColumn.Precision) {
+			log.Println("change", "column", "precision", targetColumn.Name, targetColumn.Precision, sourceColumn.Precision)
+			alteration = true
+		}
+
+		// Nullable
 		if targetColumn.Nullable != sourceColumn.Nullable {
-			log.Println("change", "column", "nullable", targetColumn.Nullable, sourceColumn.Nullable)
+			log.Println("change", "column", "nullable", targetColumn.Name, targetColumn.Nullable, sourceColumn.Nullable)
 			alteration = true
 		}
+
+		// Default
 		if targetColumn.Default != sourceColumn.Default {
-			log.Println("change", "column", "default", targetColumn.Default, sourceColumn.Default)
+			log.Println("change", "column", "default", targetColumn.Name, targetColumn.Default, sourceColumn.Default)
 			alteration = true
 		}
 

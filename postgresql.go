@@ -9,7 +9,7 @@ import (
 
 const createColumnTemplate = "createColumnTemplate"
 
-type postgresDescriptor struct {
+type postgresDatabase struct {
 }
 
 type postgresDefinition struct {
@@ -82,50 +82,50 @@ func (p postgresTable) Definition() (interface{}, error) {
 }
 
 type postgresColumn struct {
-	TableCatalog          string  `db:"table_catalog"`
-	TableSchema           string  `db:"table_schema"`
-	TableName             string  `db:"table_name"`
-	ColumnName            string  `db:"column_name"`
-	OrdinalPosition       int64   `db:"ordinal_position"`
-	ColumnDefault         *string `db:"column_default"`
-	IsNullable            string  `db:"is_nullable"`
-	DataType              string  `db:"data_type"`
-	CharcterMaximumLength *int64  `db:"character_maximum_length"`
-	CharacterOctetLength  *int64  `db:"character_octet_length"`
-	NumericPrecision      *int64  `db:"numeric_precision"`
-	NumericPrecisionRadix *int64  `db:"numeric_precision_radix"`
-	NumericScale          *int64  `db:"numeric_scale"`
-	DatetimePrecisions    *int64  `db:"datetime_precision"`
-	IntervalType          *string `db:"interval_type"`
-	IntervalPrecision     *int64  `db:"interval_precision"`
-	CharacterSetCatalog   *string `db:"character_set_catalog"`
-	CharacterSetSchema    *string `db:"character_set_schema"`
-	CharacterSetName      *string `db:"character_set_name"`
-	CollationCatalog      *string `db:"collation_catalog"`
-	CollationSchema       *string `db:"collation_schema"`
-	CollationName         *string `db:"collation_name"`
-	DomainCatalog         *string `db:"domain_catalog"`
-	DomainSchema          *string `db:"domain_schema"`
-	DomainName            *string `db:"domain_name"`
-	UdtCatalog            string  `db:"udt_catalog"`
-	UdtSchema             string  `db:"udt_schema"`
-	UdtName               string  `db:"udt_name"`
-	ScopeCatalog          *string `db:"scope_catalog"`
-	ScopeSchema           *string `db:"scope_schema"`
-	ScopeName             *string `db:"scope_name"`
-	MaximumCardinality    *int64  `db:"maximum_cardinality"`
-	DtdIdentifier         string  `db:"dtd_identifier"`
-	IsSelfReferencing     string  `db:"is_self_referencing"`
-	IsIdentity            string  `db:"is_identity"`
-	IdentityGeneration    *string `db:"identity_generation"`
-	IdentityStart         *string `db:"identity_start"`
-	IdentityIncrement     *string `db:"identity_increment"`
-	IdentityMaximum       *string `db:"identity_maximum"`
-	IdentityMinimum       *string `db:"identity_minimum"`
-	IdentityCycle         string  `db:"identity_cycle"`
-	IsGenerated           string  `db:"is_generated"`
-	GenerationExpression  *string `db:"generation_expression"`
-	IsUpdatable           string  `db:"is_updatable"`
+	TableCatalog           string  `db:"table_catalog"`
+	TableSchema            string  `db:"table_schema"`
+	TableName              string  `db:"table_name"`
+	ColumnName             string  `db:"column_name"`
+	OrdinalPosition        int64   `db:"ordinal_position"`
+	ColumnDefault          *string `db:"column_default"`
+	IsNullable             string  `db:"is_nullable"`
+	DataType               string  `db:"data_type"`
+	CharacterMaximumLength *int64  `db:"character_maximum_length"`
+	CharacterOctetLength   *int64  `db:"character_octet_length"`
+	NumericPrecision       *int64  `db:"numeric_precision"`
+	NumericPrecisionRadix  *int64  `db:"numeric_precision_radix"`
+	NumericScale           *int64  `db:"numeric_scale"`
+	DatetimePrecisions     *int64  `db:"datetime_precision"`
+	IntervalType           *string `db:"interval_type"`
+	IntervalPrecision      *int64  `db:"interval_precision"`
+	CharacterSetCatalog    *string `db:"character_set_catalog"`
+	CharacterSetSchema     *string `db:"character_set_schema"`
+	CharacterSetName       *string `db:"character_set_name"`
+	CollationCatalog       *string `db:"collation_catalog"`
+	CollationSchema        *string `db:"collation_schema"`
+	CollationName          *string `db:"collation_name"`
+	DomainCatalog          *string `db:"domain_catalog"`
+	DomainSchema           *string `db:"domain_schema"`
+	DomainName             *string `db:"domain_name"`
+	UdtCatalog             string  `db:"udt_catalog"`
+	UdtSchema              string  `db:"udt_schema"`
+	UdtName                string  `db:"udt_name"`
+	ScopeCatalog           *string `db:"scope_catalog"`
+	ScopeSchema            *string `db:"scope_schema"`
+	ScopeName              *string `db:"scope_name"`
+	MaximumCardinality     *int64  `db:"maximum_cardinality"`
+	DtdIdentifier          string  `db:"dtd_identifier"`
+	IsSelfReferencing      string  `db:"is_self_referencing"`
+	IsIdentity             string  `db:"is_identity"`
+	IdentityGeneration     *string `db:"identity_generation"`
+	IdentityStart          *string `db:"identity_start"`
+	IdentityIncrement      *string `db:"identity_increment"`
+	IdentityMaximum        *string `db:"identity_maximum"`
+	IdentityMinimum        *string `db:"identity_minimum"`
+	IdentityCycle          string  `db:"identity_cycle"`
+	IsGenerated            string  `db:"is_generated"`
+	GenerationExpression   *string `db:"generation_expression"`
+	IsUpdatable            string  `db:"is_updatable"`
 }
 
 func (p postgresColumn) String() string {
@@ -143,20 +143,30 @@ func (p postgresColumn) Definition() (interface{}, error) {
 	if p.IsNullable == "YES" {
 		nullable = true
 	}
+	maxLength := int64(0)
+	if p.CharacterMaximumLength != nil {
+		maxLength = *p.CharacterMaximumLength
+	}
+	precision := ","
+	if p.NumericPrecision != nil && p.NumericPrecisionRadix != nil {
+		precision = fmt.Sprintf("%d,%d", *p.NumericPrecision, *p.NumericPrecisionRadix)
+	}
 	column := Column{
-		Name:     p.ColumnName,
-		Type:     p.DataType,
-		Nullable: nullable,
+		Name:      p.ColumnName,
+		Type:      p.DataType,
+		Length:    maxLength,
+		Precision: precision,
+		Nullable:  nullable,
 	}
 	return column, nil
 }
 
-func newPostgresqlDescriptor() (Descriptor, error) {
-	d := postgresDescriptor{}
+func newPostgresqlDatabase() (Database, error) {
+	d := postgresDatabase{}
 	return d, nil
 }
 
-func (p postgresDescriptor) schemas(db *sql.DB, name string) ([]*postgresSchema, error) {
+func (p postgresDatabase) schemas(db *sql.DB, name string) ([]*postgresSchema, error) {
 	dbx := sqlx.NewDb(db, "postgres")
 	var rows *sqlx.Rows
 	var err error
@@ -194,7 +204,7 @@ func (p postgresDescriptor) schemas(db *sql.DB, name string) ([]*postgresSchema,
 	return schemas, nil
 }
 
-func (p postgresDescriptor) schema(db *sql.DB, name string) (*postgresSchema, error) {
+func (p postgresDatabase) schema(db *sql.DB, name string) (*postgresSchema, error) {
 	elements, err := p.schemas(db, name)
 	if err != nil {
 		return nil, err
@@ -208,11 +218,11 @@ func (p postgresDescriptor) schema(db *sql.DB, name string) (*postgresSchema, er
 	return elements[0], nil
 }
 
-func (p postgresDescriptor) Schema(db *sql.DB, name string) (Element, error) {
+func (p postgresDatabase) Schema(db *sql.DB, name string) (Element, error) {
 	return p.schema(db, name)
 }
 
-func (p postgresDescriptor) tables(db *sql.DB, schema, name string) ([]*postgresTable, error) {
+func (p postgresDatabase) tables(db *sql.DB, schema, name string) ([]*postgresTable, error) {
 	dbx := sqlx.NewDb(db, "postgres")
 	var rows *sqlx.Rows
 	var err error
@@ -251,7 +261,7 @@ func (p postgresDescriptor) tables(db *sql.DB, schema, name string) ([]*postgres
 	return tables, nil
 }
 
-func (p postgresDescriptor) table(db *sql.DB, schema, name string) (*postgresTable, error) {
+func (p postgresDatabase) table(db *sql.DB, schema, name string) (*postgresTable, error) {
 	elements, err := p.tables(db, schema, name)
 	if err != nil {
 		return nil, err
@@ -265,11 +275,11 @@ func (p postgresDescriptor) table(db *sql.DB, schema, name string) (*postgresTab
 	return elements[0], nil
 }
 
-func (p postgresDescriptor) Table(db *sql.DB, schema, name string) (Element, error) {
+func (p postgresDatabase) Table(db *sql.DB, schema, name string) (Element, error) {
 	return p.table(db, schema, name)
 }
 
-func (p postgresDescriptor) columns(db *sql.DB, schema, table, column string) ([]*postgresColumn, error) {
+func (p postgresDatabase) columns(db *sql.DB, schema, table, column string) ([]*postgresColumn, error) {
 	dbx := sqlx.NewDb(db, "postgres")
 	var rows *sqlx.Rows
 	var err error
@@ -305,7 +315,7 @@ func (p postgresDescriptor) columns(db *sql.DB, schema, table, column string) ([
 	return columns, nil
 }
 
-func (p postgresDescriptor) column(db *sql.DB, schema, table, column string) (*postgresColumn, error) {
+func (p postgresDatabase) column(db *sql.DB, schema, table, column string) (*postgresColumn, error) {
 	elements, err := p.columns(db, schema, table, column)
 	if err != nil {
 		return nil, err
@@ -319,11 +329,11 @@ func (p postgresDescriptor) column(db *sql.DB, schema, table, column string) (*p
 	return elements[0], nil
 }
 
-func (p postgresDescriptor) Column(db *sql.DB, schema, table, column string) (Element, error) {
+func (p postgresDatabase) Column(db *sql.DB, schema, table, column string) (Element, error) {
 	return p.column(db, schema, table, column)
 }
 
-func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (Definition, error) {
+func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition, error) {
 	createdSchemas := map[string]Schema{}
 	for _, schemaName := range schemas {
 		schema, err := p.schema(db, schemaName)
@@ -374,7 +384,7 @@ func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (Definitio
 	return &d, nil
 }
 
-func (p postgresDescriptor) Migrations(db *sql.DB, operations []Operation) ([]string, error) {
+func (p postgresDatabase) Migrations(db *sql.DB, operations []Operation) ([]string, error) {
 	steps := []string{}
 
 	for _, operation := range operations {

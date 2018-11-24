@@ -7,7 +7,7 @@ import (
 )
 
 func TestSchema(t *testing.T) {
-	d, err := newPostgresqlDescriptor()
+	d, err := newPostgresqlDatabase()
 	if err != nil {
 		t.Error(err)
 		return
@@ -35,7 +35,7 @@ func TestSchema(t *testing.T) {
 }
 
 func TestTable(t *testing.T) {
-	d, err := newPostgresqlDescriptor()
+	d, err := newPostgresqlDatabase()
 	if err != nil {
 		t.Error(err)
 		return
@@ -58,7 +58,7 @@ func TestTable(t *testing.T) {
 }
 
 func TestColumn(t *testing.T) {
-	d, err := newPostgresqlDescriptor()
+	d, err := newPostgresqlDatabase()
 	if err != nil {
 		t.Error(err)
 		return
@@ -82,7 +82,7 @@ func TestColumn(t *testing.T) {
 }
 
 func TestDefinition(t *testing.T) {
-	d, err := newPostgresqlDescriptor()
+	d, err := newPostgresqlDatabase()
 	if err != nil {
 		t.Error(err)
 		return

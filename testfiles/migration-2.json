@@ -1,0 +1,27 @@
+{
+  "schemas": {
+    "mig": {
+      "name": "mig",
+      "tables": {
+        "first": {
+          "name": "first",
+          "columns": {
+            "key": {
+              "name": "key",
+              "type": "varchar",
+              "length": 200
+            },
+            "value": {
+              "name": "value",
+              "type": "text"
+            },
+            "accessed": {
+              "name": "accessed",
+              "type": "bigint"
+            }
+          }
+        }
+      }
+    }
+  }
+}
