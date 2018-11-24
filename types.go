@@ -57,4 +57,8 @@ type Definition interface {
 
 	// Get the schemas for the definition.
 	Schemas() map[string]Schema
+
+	// ExpectedType takes a target tpye and returns the expected type, some
+	// databases alias type names.
+	ExpectedType(target string) (string, error)
 }

@@ -2,6 +2,8 @@ package horse
 
 import (
 	"testing"
+
+	"github.com/jmoiron/sqlx"
 )
 
 func TestSchema(t *testing.T) {
@@ -92,7 +94,9 @@ func TestDefinition(t *testing.T) {
 		return
 	}
 
-	s, ok := def.Schemas["public"]
+	schemas := def.Schemas()
+
+	s, ok := schemas["public"]
 	if !ok {
 		t.Error("Schema public not present in definition")
 		return
@@ -129,8 +133,10 @@ func TestTypeMap(t *testing.T) {
 		"text":         "text",
 	}
 
+	pgdef := postgresDefinition{db: sqlx.NewDb(db, "postgres")}
+
 	for source, target := range good {
-		pgType, err := getPGType(db, source)
+		pgType, err := pgdef.ExpectedType(source)
 		if err != nil {
 			t.Error(err)
 			return

@@ -5,18 +5,18 @@ import (
 )
 
 func TestCompare(t *testing.T) {
-	def1, err := NewDefinitionFromFile("example-definition.json")
+	def1, err := NewDefinitionFromFile("testfiles/testcompare-1.json")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	def2, err := NewDefinitionFromFile("example-definition.json")
+	def2, err := NewDefinitionFromFile("testfiles/testcompare-1.json")
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	ops, err := compare(def1, def2)
+	ops, err := Compare(def1, def2)
 	if err != nil {
 		t.Error(err)
 		return
@@ -27,13 +27,19 @@ func TestCompare(t *testing.T) {
 		return
 	}
 
-	def2.stdSchemas["a"] = Schema{Name: "a"}
-	ops, err = compare(def1, def2)
+	def3, err := NewDefinitionFromFile("testfiles/testcompare-2.json")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if len(ops) != 1 {
+
+	ops, err = Compare(def1, def3)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(ops) == 0 {
 		t.Error("Comparison failed", ops)
 		return
 	}
@@ -58,7 +64,7 @@ func TestMigrations(t *testing.T) {
 		return
 	}
 
-	ops, err := compare(defDB, defF)
+	ops, err := Compare(defDB, defF)
 	if err != nil {
 		t.Error(err)
 		return
@@ -70,7 +76,7 @@ func TestMigrations(t *testing.T) {
 		return
 	}
 
-	for _, m := range migrations {
-		t.Error(m)
+	if len(migrations) != 6 {
+		t.Error("Wrong number of migrations")
 	}
 }

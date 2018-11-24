@@ -25,7 +25,7 @@ func NewDefinitionFromFile(filename string) (Definition, error) {
 
 func newDefinition(r io.Reader) (Definition, error) {
 	dec := json.NewDecoder(r)
-	var d StdDefinition
+	var d jsonDefinition
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}

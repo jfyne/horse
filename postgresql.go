@@ -13,7 +13,20 @@ type postgresDescriptor struct {
 }
 
 type postgresDefinition struct {
-	StdDefinition
+	baseDefinition
+	db *sqlx.DB
+}
+
+func (p postgresDefinition) ExpectedType(target string) (string, error) {
+	q := "select $1::regtype"
+	row := p.db.QueryRowx(q, target)
+
+	var pgType string
+	if err := row.Scan(&pgType); err != nil {
+		return "", err
+	}
+
+	return pgType, nil
 }
 
 type postgresSchema struct {
@@ -352,9 +365,10 @@ func (p postgresDescriptor) Definition(db *sql.DB, schemas ...string) (Definitio
 		}
 	}
 	d := postgresDefinition{
-		StdDefinition{
-			stdSchemas: createdSchemas,
+		baseDefinition: baseDefinition{
+			StdSchemas: createdSchemas,
 		},
+		db: sqlx.NewDb(db, "postgres"),
 	}
 
 	return &d, nil
@@ -419,17 +433,4 @@ func createColumn(schema, table string, column Column) (string, error) {
 
 func deprecateColumn(schema, table string, column Column) (string, error) {
 	return "alter", nil
-}
-
-func getPGType(db *sql.DB, target string) (string, error) {
-	dbx := sqlx.NewDb(db, "postgres")
-	q := "select $1::regtype"
-	row := dbx.QueryRowx(q, target)
-
-	var pgType string
-	if err := row.Scan(&pgType); err != nil {
-		return "", err
-	}
-
-	return pgType, nil
 }

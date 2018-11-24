@@ -2,26 +2,12 @@ package horse
 
 import "log"
 
-// StdDefinition a description of a state, either desired or current.
-type StdDefinition struct {
-	stdSchemas map[string]Schema `json:"schemas"`
-}
-
-// Schemas get the schemas.
-func (s StdDefinition) Schemas() map[string]Schema {
-	return s.stdSchemas
-}
-
-// Schema a database schema element.
-type Schema struct {
-	Name   string           `json:"name"`
-	Tables map[string]Table `json:"tables"`
-}
-
-// Table a database table element.
-type Table struct {
-	Name    string            `json:"name"`
-	Columns map[string]Column `json:"columns"`
+// Operation an action to perform on an element.
+type Operation struct {
+	action Action
+	schema Schema
+	table  Table
+	column Column
 }
 
 // Column a database column element.
@@ -32,15 +18,31 @@ type Column struct {
 	Default  string `json:"default"`
 }
 
-// Operation an action to perform on an element.
-type Operation struct {
-	action Action
-	schema Schema
-	table  Table
-	column Column
+// Table a database table element.
+type Table struct {
+	Name    string            `json:"name"`
+	Columns map[string]Column `json:"columns"`
 }
 
-func compare(source, target Definition) ([]Operation, error) {
+// Schema a database schema element.
+type Schema struct {
+	Name   string           `json:"name"`
+	Tables map[string]Table `json:"tables"`
+}
+
+// baseDefinition a description of a state, either desired or current.
+type baseDefinition struct {
+	StdSchemas map[string]Schema `json:"schemas"`
+}
+
+// Schemas get the schemas.
+func (s baseDefinition) Schemas() map[string]Schema {
+	return s.StdSchemas
+}
+
+// Compare this source definition to a target, returns the
+// Operations required in order to match the target.
+func Compare(source, target Definition) ([]Operation, error) {
 	Operations := []Operation{}
 
 	sourceSchemas := source.Schemas()
@@ -53,7 +55,7 @@ func compare(source, target Definition) ([]Operation, error) {
 			}
 			Operations = append(Operations, op)
 		}
-		ops, err := compareTables(&sourceSchema, &targetSchema)
+		ops, err := compareTables(source, &sourceSchema, &targetSchema)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +65,7 @@ func compare(source, target Definition) ([]Operation, error) {
 	return Operations, nil
 }
 
-func compareTables(source, target *Schema) ([]Operation, error) {
+func compareTables(sourceDef Definition, source, target *Schema) ([]Operation, error) {
 	Operations := []Operation{}
 
 	for targetTableName, targetTable := range target.Tables {
@@ -76,7 +78,7 @@ func compareTables(source, target *Schema) ([]Operation, error) {
 			}
 			Operations = append(Operations, op)
 		}
-		ops, err := compareColumns(&sourceTable, target, &targetTable)
+		ops, err := compareColumns(sourceDef, &sourceTable, target, &targetTable)
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +88,7 @@ func compareTables(source, target *Schema) ([]Operation, error) {
 	return Operations, nil
 }
 
-func compareColumns(source *Table, schema *Schema, target *Table) ([]Operation, error) {
+func compareColumns(sourceDef Definition, source *Table, schema *Schema, target *Table) ([]Operation, error) {
 	Operations := []Operation{}
 
 	for targetColumnName, targetColumn := range target.Columns {
@@ -102,7 +104,11 @@ func compareColumns(source *Table, schema *Schema, target *Table) ([]Operation, 
 			continue
 		}
 		alteration := false
-		if targetColumn.Type != sourceColumn.Type {
+		expectedType, err := sourceDef.ExpectedType(targetColumn.Type)
+		if err != nil {
+			return nil, err
+		}
+		if expectedType != sourceColumn.Type {
 			log.Println("change", "column", "type", targetColumn.Type, sourceColumn.Type)
 			alteration = true
 		}

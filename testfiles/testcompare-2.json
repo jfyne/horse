@@ -1,0 +1,33 @@
+{
+  "schemas": {
+    "saddle": {
+      "name": "saddle",
+      "tables": {
+        "notbag": {
+          "name": "notbag",
+          "columns": {
+            "id": {
+              "name": "id",
+              "type": "integer"
+            },
+            "name": {
+              "name": "name",
+              "type": "varchar(255)",
+              "nullable": false
+            },
+            "money": {
+              "name": "money",
+              "type": "numeric(24,10)",
+              "nullable": true
+            },
+            "date": {
+              "name": "date",
+              "type": "timestamp",
+              "default": "current_timestamp"
+            }
+          }
+        }
+      }
+    }
+  }
+}
