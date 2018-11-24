@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestCompare(t *testing.T) {
+func TestOperationsToMatch(t *testing.T) {
 	def1, err := NewDefinitionFromFile("testfiles/testcompare-1.json")
 	if err != nil {
 		t.Error(err)
@@ -16,7 +16,7 @@ func TestCompare(t *testing.T) {
 		return
 	}
 
-	ops, err := Compare(def1, def2)
+	ops, err := OperationsToMatch(def1, def2)
 	if err != nil {
 		t.Error(err)
 		return
@@ -33,7 +33,7 @@ func TestCompare(t *testing.T) {
 		return
 	}
 
-	ops, err = Compare(def1, def3)
+	ops, err = OperationsToMatch(def1, def3)
 	if err != nil {
 		t.Error(err)
 		return
@@ -64,7 +64,7 @@ func TestMigrations(t *testing.T) {
 		return
 	}
 
-	ops, err := Compare(defDB, defF)
+	ops, err := OperationsToMatch(defDB, defF)
 	if err != nil {
 		t.Error(err)
 		return

@@ -93,7 +93,7 @@ func TestDescriptor(t *testing.T) {
 		return
 	}
 
-	ops, err := Compare(dbDefinition, jsonDefinition)
+	ops, err := OperationsToMatch(dbDefinition, jsonDefinition)
 	if err != nil {
 		t.Error(err)
 		return
