@@ -8,6 +8,7 @@ import (
 )
 
 const createColumnTemplate = "createColumnTemplate"
+const columnPrefix = "__horse_"
 
 type postgresDatabase struct {
 }
@@ -408,10 +409,37 @@ func (p postgresDatabase) Migrations(db *sql.DB, operations []Operation) ([]stri
 			}
 			steps = append(steps, q)
 		case AlterColumn:
+			qs, err := alterColumn(operation.schema.Name, operation.table.Name, operation.column)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, qs...)
 		}
 	}
 
 	return steps, nil
+}
+
+func (p postgresDatabase) Migrate(db *sql.DB, migrations []string) error {
+	dbx := sqlx.NewDb(db, "postgres")
+
+	tx, err := dbx.Beginx()
+	if err != nil {
+		return err
+	}
+
+	for _, m := range migrations {
+		if _, err := tx.Exec(m); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createSchema(schema string) (string, error) {
@@ -441,6 +469,36 @@ func createColumn(schema, table string, column Column) (string, error) {
 	return sql, nil
 }
 
-func deprecateColumn(schema, table string, column Column) (string, error) {
-	return "alter", nil
+func alterColumn(schema, table string, column Column) ([]string, error) {
+	prefixed := fmt.Sprintf("%s%s", columnPrefix, column.Name)
+	create, err := createColumn(schema, table, column)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return []string{
+		fmt.Sprintf(`alter table %s.%s rename column %s to %s`,
+			schema,
+			table,
+			column.Name,
+			prefixed,
+		),
+		fmt.Sprintf(`alter table %s.%s alter column %s drop not null`,
+			schema,
+			table,
+			prefixed,
+		),
+		fmt.Sprintf(`alter table %s.%s alter column %s set default null`,
+			schema,
+			table,
+			prefixed,
+		),
+		create,
+		fmt.Sprintf(`update %s.%s set %s = %s`,
+			schema,
+			table,
+			column.Name,
+			prefixed,
+		),
+	}, nil
 }

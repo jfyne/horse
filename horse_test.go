@@ -46,20 +46,14 @@ func setup() error {
 		return err
 	}
 	db = testDB
-	if _, err := db.Exec("create table if not exists test1 (first text, second decimal, third integer)"); err != nil {
-		return err
-	}
 	return nil
 }
 
 func teardown() error {
-	if _, err := db.Exec("drop table if exists test1"); err != nil {
-		return err
-	}
 	return db.Close()
 }
 
-func TestJSON(t *testing.T) {
+func TestJSONDefintionGenerationWorks(t *testing.T) {
 	_, err := NewDefinitionFromJSON(testDef)
 	if err != nil {
 		t.Error(err)
@@ -74,37 +68,15 @@ func TestJSON(t *testing.T) {
 	}
 }
 
-func TestDatabase(t *testing.T) {
+func TestDatabaseDefinitionGenerationWorks(t *testing.T) {
 	database, err := NewDatabase(Postgresql)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	dbDefinition, err := database.Definition(db, "public")
-	if err != nil {
+	if _, err := database.Definition(db, "public"); err != nil {
 		t.Error(err)
-		return
-	}
-
-	jsonDefinition, err := NewDefinitionFromJSON(testDef)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	ops, err := OperationsToMatch(dbDefinition, jsonDefinition)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	if len(ops) != 0 {
-		migs, _ := database.Migrations(db, ops)
-		for _, m := range migs {
-			t.Error(m)
-		}
-		t.Error("Definitions should match")
 		return
 	}
 }

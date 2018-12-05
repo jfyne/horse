@@ -41,6 +41,10 @@ type Database interface {
 	// Migrations takes a slice of Operations and converts them into
 	// steps to complete the Operation.
 	Migrations(*sql.DB, []Operation) ([]string, error)
+
+	// Migrate takes migrations and in a transaction
+	// migrates the database.
+	Migrate(*sql.DB, []string) error
 }
 
 // Element a database element.

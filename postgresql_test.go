@@ -6,7 +6,45 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+func setupDBState() error {
+	def, err := NewDefinitionFromJSON(testDef)
+	if err != nil {
+		return err
+	}
+
+	d, err := newPostgresqlDatabase()
+	if err != nil {
+		return err
+	}
+
+	dbDef, err := d.Definition(db, "public")
+	if err != nil {
+		return err
+	}
+
+	ops, err := OperationsToMatch(dbDef, def)
+	if err != nil {
+		return err
+	}
+
+	migrations, err := d.Migrations(db, ops)
+	if err != nil {
+		return err
+	}
+
+	if err := d.Migrate(db, migrations); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func TestSchema(t *testing.T) {
+	if err := setupDBState(); err != nil {
+		t.Error(err)
+		return
+	}
+
 	d, err := newPostgresqlDatabase()
 	if err != nil {
 		t.Error(err)
