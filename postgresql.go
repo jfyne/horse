@@ -52,7 +52,7 @@ schema (
 func (p postgresSchema) Definition() (interface{}, error) {
 	schema := Schema{
 		Name:   p.SchemaName,
-		Tables: map[string]Table{},
+		Tables: []Table{},
 	}
 	return schema, nil
 }
@@ -77,7 +77,7 @@ table (
 func (p postgresTable) Definition() (interface{}, error) {
 	table := Table{
 		Name:    p.TableName,
-		Columns: map[string]Column{},
+		Columns: []Column{},
 	}
 	return table, nil
 }
@@ -335,9 +335,12 @@ func (p postgresDatabase) Column(db *sql.DB, schema, table, column string) (Elem
 }
 
 func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition, error) {
-	createdSchemas := map[string]Schema{}
+	createdSchemas := []Schema{}
 	for _, schemaName := range schemas {
 		schema, err := p.schema(db, schemaName)
+		if err == ErrNotFound {
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -346,7 +349,6 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 			return nil, err
 		}
 		sdef, _ := s.(Schema)
-		createdSchemas[sdef.Name] = sdef
 
 		tables, err := p.tables(db, schemaName, "")
 		if err != nil {
@@ -358,7 +360,6 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 				return nil, err
 			}
 			tdef, _ := t.(Table)
-			createdSchemas[sdef.Name].Tables[tdef.Name] = tdef
 
 			columns, err := p.columns(db, schemaName, tdef.Name, "")
 			if err != nil {
@@ -371,9 +372,11 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 					return nil, err
 				}
 				cdef, _ := c.(Column)
-				createdSchemas[sdef.Name].Tables[tdef.Name].Columns[cdef.Name] = cdef
+				tdef.Columns = append(tdef.Columns, cdef)
 			}
+			sdef.Tables = append(sdef.Tables, tdef)
 		}
+		createdSchemas = append(createdSchemas, sdef)
 	}
 	d := postgresDefinition{
 		baseDefinition: baseDefinition{
@@ -382,7 +385,7 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 		db: sqlx.NewDb(db, "postgres"),
 	}
 
-	return &d, nil
+	return d, nil
 }
 
 func (p postgresDatabase) Migrations(db *sql.DB, operations []Operation) ([]string, error) {

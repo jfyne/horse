@@ -1,27 +1,27 @@
 {
-  "schemas": {
-    "mig": {
+  "schemas": [
+    {
       "name": "mig",
-      "tables": {
-        "first": {
+      "tables": [
+        {
           "name": "first",
-          "columns": {
-            "key": {
+          "columns": [
+            {
               "name": "key",
               "type": "varchar",
-              "length": 200
+              "length": 100
             },
-            "value": {
+            {
               "name": "value",
               "type": "text"
             },
-            "accessed": {
+            {
               "name": "accessed",
               "type": "bigint"
             }
-          }
+          ]
         }
-      }
+      ]
     }
-  }
+  ]
 }

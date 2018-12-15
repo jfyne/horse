@@ -4,6 +4,68 @@ import (
 	"database/sql"
 )
 
+// Column a database column element.
+type Column struct {
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Length    int64  `json:"length"`
+	Precision string `json:"precision"`
+	Nullable  bool   `json:"nullable"`
+	Default   string `json:"default"`
+}
+
+// Table a database table element.
+type Table struct {
+	Name    string   `json:"name"`
+	Columns []Column `json:"columns"`
+}
+
+// Column fetch an individual column.
+func (t Table) Column(name string) (Column, error) {
+	for _, c := range t.Columns {
+		if c.Name == name {
+			return c, nil
+		}
+	}
+	return Column{}, ErrNotFound
+}
+
+// Schema a database schema element.
+type Schema struct {
+	Name   string  `json:"name"`
+	Tables []Table `json:"tables"`
+}
+
+// Table fetch an individual table.
+func (s Schema) Table(name string) (Table, error) {
+	for _, t := range s.Tables {
+		if t.Name == name {
+			return t, nil
+		}
+	}
+	return Table{}, ErrNotFound
+}
+
+// baseDefinition a description of a state, either desired or current.
+type baseDefinition struct {
+	StdSchemas []Schema `json:"schemas"`
+}
+
+// Schemas get the schemas.
+func (s baseDefinition) Schemas() []Schema {
+	return s.StdSchemas
+}
+
+// Schema fetch an individual schema.
+func (s baseDefinition) Schema(name string) (Schema, error) {
+	for _, sch := range s.StdSchemas {
+		if sch.Name == name {
+			return sch, nil
+		}
+	}
+	return Schema{}, ErrNotFound
+}
+
 // Action performed by horse.
 type Action string
 
@@ -60,7 +122,10 @@ type Element interface {
 type Definition interface {
 
 	// Get the schemas for the definition.
-	Schemas() map[string]Schema
+	Schemas() []Schema
+
+	// Schema pull an individual schema.
+	Schema(string) (Schema, error)
 
 	// ExpectedType takes a target tpye and returns the expected type, some
 	// databases alias type names.

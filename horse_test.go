@@ -10,26 +10,26 @@ import (
 
 var db *sql.DB
 
-var testDef = `{ "schemas": { "public": { "name": "public", "tables": { "test1": {
+var testDef = `{ "schemas": [ { "name": "test", "tables": [ {
 		"name": "test1",
-		"columns": {
-			"first": {
+		"columns": [
+			{
 				"name": "first",
 				"type": "text",
 				"nullable": true
 			},
-			"second": {
+			{
 				"name": "second",
 				"type": "decimal",
 				"nullable": true
 			},
-			"third": {
+			{
 				"name": "third",
 				"type": "integer",
 				"nullable": true
 			}
-		}
-	}}}}}`
+		]
+	}]}]}`
 
 func TestMain(m *testing.M) {
 	if err := setup(); err != nil {

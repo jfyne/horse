@@ -17,10 +17,9 @@ type Operation struct {
 func matchDef(source, target Definition) ([]Operation, error) {
 	Operations := []Operation{}
 
-	sourceSchemas := source.Schemas()
-	for targetSchemaName, targetSchema := range target.Schemas() {
-		sourceSchema, ok := sourceSchemas[targetSchemaName]
-		if !ok {
+	for _, targetSchema := range target.Schemas() {
+		sourceSchema, err := source.Schema(targetSchema.Name)
+		if err == ErrNotFound {
 			op := Operation{
 				action: CreateSchema,
 				schema: targetSchema,
@@ -40,9 +39,9 @@ func matchDef(source, target Definition) ([]Operation, error) {
 func compareTables(sourceDef Definition, source, target *Schema) ([]Operation, error) {
 	Operations := []Operation{}
 
-	for targetTableName, targetTable := range target.Tables {
-		sourceTable, ok := source.Tables[targetTableName]
-		if !ok {
+	for _, targetTable := range target.Tables {
+		sourceTable, err := source.Table(targetTable.Name)
+		if err == ErrNotFound {
 			op := Operation{
 				action: CreateTable,
 				schema: *target,
@@ -63,9 +62,9 @@ func compareTables(sourceDef Definition, source, target *Schema) ([]Operation, e
 func compareColumns(sourceDef Definition, source *Table, schema *Schema, target *Table) ([]Operation, error) {
 	Operations := []Operation{}
 
-	for targetColumnName, targetColumn := range target.Columns {
-		sourceColumn, ok := source.Columns[targetColumnName]
-		if !ok {
+	for _, targetColumn := range target.Columns {
+		sourceColumn, err := source.Column(targetColumn.Name)
+		if err == ErrNotFound {
 			op := Operation{
 				action: CreateColumn,
 				schema: *schema,
@@ -95,7 +94,7 @@ func compareColumns(sourceDef Definition, source *Table, schema *Schema, target 
 		}
 
 		// Precision
-		// If precision is blank, we are taking teh default. If it is something other than blank we are
+		// If precision is blank, we are taking the default. If it is something other than blank we are
 		// potentially changing.
 		if targetColumn.Precision != "" && (targetColumn.Precision != sourceColumn.Precision) {
 			log.Println("change", "column", "precision", targetColumn.Name, targetColumn.Precision, sourceColumn.Precision)

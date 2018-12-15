@@ -4,36 +4,37 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 func setupDBState() error {
 	def, err := NewDefinitionFromJSON(testDef)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "NewDefinitionFromJSON")
 	}
 
 	d, err := newPostgresqlDatabase()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "newPostgresqlDatabase")
 	}
 
-	dbDef, err := d.Definition(db, "public")
+	dbDef, err := d.Definition(db, "test")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "d.Definition")
 	}
 
 	ops, err := OperationsToMatch(dbDef, def)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "OperationsToMatch")
 	}
 
 	migrations, err := d.Migrations(db, ops)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "d.Migrations")
 	}
 
 	if err := d.Migrate(db, migrations); err != nil {
-		return err
+		return errors.Wrap(err, "d.Migrate")
 	}
 
 	return nil
@@ -132,22 +133,20 @@ func TestDefinition(t *testing.T) {
 		return
 	}
 
-	schemas := def.Schemas()
-
-	s, ok := schemas["public"]
-	if !ok {
+	s, err := def.Schema("public")
+	if err == ErrNotFound {
 		t.Error("Schema public not present in definition")
 		return
 	}
 
-	ta, ok := s.Tables["test1"]
-	if !ok {
+	ta, err := s.Table("test1")
+	if err == ErrNotFound {
 		t.Error("Table test1 not present in definition")
 		return
 	}
 
-	col, ok := ta.Columns["second"]
-	if !ok {
+	col, err := ta.Column("second")
+	if err == ErrNotFound {
 		t.Error("Column second not present in definition")
 		return
 	}

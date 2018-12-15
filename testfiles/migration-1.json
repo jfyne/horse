@@ -1,23 +1,23 @@
 {
-  "schemas": {
-    "mig": {
+  "schemas": [
+    {
       "name": "mig",
-      "tables": {
-        "first": {
+      "tables": [
+        {
           "name": "first",
-          "columns": {
-            "key": {
+          "columns": [
+            {
               "name": "key",
               "type": "varchar",
               "length": 100
             },
-            "value": {
+            {
               "name": "value",
               "type": "text"
             }
-          }
+          ]
         }
-      }
+      ]
     }
-  }
+  ]
 }
