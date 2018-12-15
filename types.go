@@ -4,14 +4,20 @@ import (
 	"database/sql"
 )
 
-// Column a database column element.
-type Column struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Length    int64  `json:"length"`
-	Precision string `json:"precision"`
-	Nullable  bool   `json:"nullable"`
-	Default   string `json:"default"`
+// Schema a database schema element.
+type Schema struct {
+	Name   string  `json:"name"`
+	Tables []Table `json:"tables"`
+}
+
+// Table fetch an individual table.
+func (s Schema) Table(name string) (Table, error) {
+	for _, t := range s.Tables {
+		if t.Name == name {
+			return t, nil
+		}
+	}
+	return Table{}, ErrNotFound
 }
 
 // Table a database table element.
@@ -30,20 +36,14 @@ func (t Table) Column(name string) (Column, error) {
 	return Column{}, ErrNotFound
 }
 
-// Schema a database schema element.
-type Schema struct {
-	Name   string  `json:"name"`
-	Tables []Table `json:"tables"`
-}
-
-// Table fetch an individual table.
-func (s Schema) Table(name string) (Table, error) {
-	for _, t := range s.Tables {
-		if t.Name == name {
-			return t, nil
-		}
-	}
-	return Table{}, ErrNotFound
+// Column a database column element.
+type Column struct {
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Length    int64  `json:"length"`
+	Precision string `json:"precision"`
+	Nullable  bool   `json:"nullable"`
+	Default   string `json:"default"`
 }
 
 // baseDefinition a description of a state, either desired or current.
