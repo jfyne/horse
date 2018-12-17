@@ -44,13 +44,13 @@ func TestOperationsToMatch(t *testing.T) {
 }
 
 func TestMigrations(t *testing.T) {
-	database, err := NewDatabase(Postgresql)
+	database, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	defDB, err := database.Definition(db, "public")
+	defDB, err := database.Definition("public")
 	if err != nil {
 		t.Error(err)
 		return
@@ -68,7 +68,7 @@ func TestMigrations(t *testing.T) {
 		return
 	}
 
-	migrations, err := database.Migrations(db, ops)
+	migrations, err := database.Migrations(ops)
 	if err != nil {
 		t.Error(err)
 		return

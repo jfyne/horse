@@ -69,13 +69,13 @@ func TestJSONDefintionGenerationWorks(t *testing.T) {
 }
 
 func TestDatabaseDefinitionGenerationWorks(t *testing.T) {
-	database, err := NewDatabase(Postgresql)
+	database, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	if _, err := database.Definition(db, "public"); err != nil {
+	if _, err := database.Definition("public"); err != nil {
 		t.Error(err)
 		return
 	}

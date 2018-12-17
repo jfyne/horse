@@ -2,6 +2,7 @@ package horse
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"os"
@@ -14,10 +15,10 @@ func OperationsToMatch(source, target Definition) ([]Operation, error) {
 }
 
 // NewDatabase returns a Database for a type.
-func NewDatabase(d DatabaseType) (Database, error) {
+func NewDatabase(d DatabaseType, db *sql.DB) (Database, error) {
 	switch d {
 	case Postgresql:
-		return newPostgresqlDatabase()
+		return newPostgresqlDatabase(db)
 	}
 
 	return nil, ErrUnknownDatabase

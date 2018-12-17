@@ -13,27 +13,12 @@ func setupDBState() error {
 		return errors.Wrap(err, "NewDefinitionFromJSON")
 	}
 
-	d, err := newPostgresqlDatabase()
+	d, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		return errors.Wrap(err, "newPostgresqlDatabase")
 	}
 
-	dbDef, err := d.Definition(db, "test")
-	if err != nil {
-		return errors.Wrap(err, "d.Definition")
-	}
-
-	ops, err := OperationsToMatch(dbDef, def)
-	if err != nil {
-		return errors.Wrap(err, "OperationsToMatch")
-	}
-
-	migrations, err := d.Migrations(db, ops)
-	if err != nil {
-		return errors.Wrap(err, "d.Migrations")
-	}
-
-	if err := d.Migrate(db, migrations); err != nil {
+	if err := d.Migrate(def); err != nil {
 		return errors.Wrap(err, "d.Migrate")
 	}
 
@@ -46,18 +31,18 @@ func TestSchema(t *testing.T) {
 		return
 	}
 
-	d, err := newPostgresqlDatabase()
+	d, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	if _, err := d.Schema(db, "publix"); err == nil {
+	if _, err := d.Schema("publix"); err == nil {
 		t.Error(err)
 		return
 	}
 
-	s, err := d.Schema(db, "public")
+	s, err := d.Schema("public")
 	if err != nil {
 		t.Error(err)
 		return
@@ -74,13 +59,13 @@ func TestSchema(t *testing.T) {
 }
 
 func TestTable(t *testing.T) {
-	d, err := newPostgresqlDatabase()
+	d, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	ta, err := d.Table(db, "public", "test1")
+	ta, err := d.Table("public", "test1")
 	if err != nil {
 		t.Error(err)
 		return
@@ -97,13 +82,13 @@ func TestTable(t *testing.T) {
 }
 
 func TestColumn(t *testing.T) {
-	d, err := newPostgresqlDatabase()
+	d, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	co, err := d.Column(db, "public", "test1", "first")
+	co, err := d.Column("public", "test1", "first")
 	if err != nil {
 		t.Error(err)
 		return
@@ -121,13 +106,13 @@ func TestColumn(t *testing.T) {
 }
 
 func TestDefinition(t *testing.T) {
-	d, err := newPostgresqlDatabase()
+	d, err := NewDatabase(Postgresql, db)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	def, err := d.Definition(db, "public")
+	def, err := d.Definition("public")
 	if err != nil {
 		t.Error(err)
 		return

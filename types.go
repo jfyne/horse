@@ -1,9 +1,5 @@
 package horse
 
-import (
-	"database/sql"
-)
-
 // Schema a database schema element.
 type Schema struct {
 	Name   string  `json:"name"`
@@ -89,24 +85,24 @@ const (
 type Database interface {
 
 	// Schema return the named schema.
-	Schema(*sql.DB, string) (Element, error)
+	Schema(string) (Element, error)
 
 	// Table return the named table.
-	Table(*sql.DB, string, string) (Element, error)
+	Table(string, string) (Element, error)
 
 	// Column return the named column.
-	Column(*sql.DB, string, string, string) (Element, error)
+	Column(string, string, string) (Element, error)
 
 	// Definition creates a definition from the database.
-	Definition(*sql.DB, ...string) (Definition, error)
+	Definition(...string) (Definition, error)
 
 	// Migrations takes a slice of Operations and converts them into
 	// steps to complete the Operation.
-	Migrations(*sql.DB, []Operation) ([]string, error)
+	Migrations([]Operation) ([]string, error)
 
-	// Migrate takes migrations and in a transaction
-	// migrates the database.
-	Migrate(*sql.DB, []string) error
+	// Migrate takes a target definition and in a transaction
+	// migrates the database to that target.
+	Migrate(Definition) error
 }
 
 // Element a database element.

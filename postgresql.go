@@ -11,6 +11,7 @@ const createColumnTemplate = "createColumnTemplate"
 const columnPrefix = "__horse_"
 
 type postgresDatabase struct {
+	db *sqlx.DB
 }
 
 type postgresDefinition struct {
@@ -162,13 +163,13 @@ func (p postgresColumn) Definition() (interface{}, error) {
 	return column, nil
 }
 
-func newPostgresqlDatabase() (Database, error) {
-	d := postgresDatabase{}
+func newPostgresqlDatabase(db *sql.DB) (Database, error) {
+	dbx := sqlx.NewDb(db, "postgres")
+	d := postgresDatabase{db: dbx}
 	return d, nil
 }
 
-func (p postgresDatabase) schemas(db *sql.DB, name string) ([]*postgresSchema, error) {
-	dbx := sqlx.NewDb(db, "postgres")
+func (p postgresDatabase) schemas(name string) ([]*postgresSchema, error) {
 	var rows *sqlx.Rows
 	var err error
 
@@ -180,12 +181,12 @@ func (p postgresDatabase) schemas(db *sql.DB, name string) ([]*postgresSchema, e
 	`
 	if name != "" {
 		where := `where schema_name = $1`
-		rows, err = dbx.Queryx(q+where, name)
+		rows, err = p.db.Queryx(q+where, name)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		rows, err = dbx.Queryx(q)
+		rows, err = p.db.Queryx(q)
 		if err != nil {
 			return nil, err
 		}
@@ -205,8 +206,8 @@ func (p postgresDatabase) schemas(db *sql.DB, name string) ([]*postgresSchema, e
 	return schemas, nil
 }
 
-func (p postgresDatabase) schema(db *sql.DB, name string) (*postgresSchema, error) {
-	elements, err := p.schemas(db, name)
+func (p postgresDatabase) schema(name string) (*postgresSchema, error) {
+	elements, err := p.schemas(name)
 	if err != nil {
 		return nil, err
 	}
@@ -219,12 +220,11 @@ func (p postgresDatabase) schema(db *sql.DB, name string) (*postgresSchema, erro
 	return elements[0], nil
 }
 
-func (p postgresDatabase) Schema(db *sql.DB, name string) (Element, error) {
-	return p.schema(db, name)
+func (p postgresDatabase) Schema(name string) (Element, error) {
+	return p.schema(name)
 }
 
-func (p postgresDatabase) tables(db *sql.DB, schema, name string) ([]*postgresTable, error) {
-	dbx := sqlx.NewDb(db, "postgres")
+func (p postgresDatabase) tables(schema, name string) ([]*postgresTable, error) {
 	var rows *sqlx.Rows
 	var err error
 
@@ -238,12 +238,12 @@ func (p postgresDatabase) tables(db *sql.DB, schema, name string) ([]*postgresTa
 	`
 	if name != "" {
 		where := `and table_name = $2`
-		rows, err = dbx.Queryx(q+where, schema, name)
+		rows, err = p.db.Queryx(q+where, schema, name)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		rows, err = dbx.Queryx(q, schema)
+		rows, err = p.db.Queryx(q, schema)
 		if err != nil {
 			return nil, err
 		}
@@ -262,8 +262,8 @@ func (p postgresDatabase) tables(db *sql.DB, schema, name string) ([]*postgresTa
 	return tables, nil
 }
 
-func (p postgresDatabase) table(db *sql.DB, schema, name string) (*postgresTable, error) {
-	elements, err := p.tables(db, schema, name)
+func (p postgresDatabase) table(schema, name string) (*postgresTable, error) {
+	elements, err := p.tables(schema, name)
 	if err != nil {
 		return nil, err
 	}
@@ -276,12 +276,11 @@ func (p postgresDatabase) table(db *sql.DB, schema, name string) (*postgresTable
 	return elements[0], nil
 }
 
-func (p postgresDatabase) Table(db *sql.DB, schema, name string) (Element, error) {
-	return p.table(db, schema, name)
+func (p postgresDatabase) Table(schema, name string) (Element, error) {
+	return p.table(schema, name)
 }
 
-func (p postgresDatabase) columns(db *sql.DB, schema, table, column string) ([]*postgresColumn, error) {
-	dbx := sqlx.NewDb(db, "postgres")
+func (p postgresDatabase) columns(schema, table, column string) ([]*postgresColumn, error) {
 	var rows *sqlx.Rows
 	var err error
 
@@ -293,12 +292,12 @@ func (p postgresDatabase) columns(db *sql.DB, schema, table, column string) ([]*
 	`
 	if column != "" {
 		where := `and column_name = $3`
-		rows, err = dbx.Queryx(q+where, schema, table, column)
+		rows, err = p.db.Queryx(q+where, schema, table, column)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		rows, err = dbx.Queryx(q, schema, table)
+		rows, err = p.db.Queryx(q, schema, table)
 		if err != nil {
 			return nil, err
 		}
@@ -316,8 +315,8 @@ func (p postgresDatabase) columns(db *sql.DB, schema, table, column string) ([]*
 	return columns, nil
 }
 
-func (p postgresDatabase) column(db *sql.DB, schema, table, column string) (*postgresColumn, error) {
-	elements, err := p.columns(db, schema, table, column)
+func (p postgresDatabase) column(schema, table, column string) (*postgresColumn, error) {
+	elements, err := p.columns(schema, table, column)
 	if err != nil {
 		return nil, err
 	}
@@ -330,14 +329,14 @@ func (p postgresDatabase) column(db *sql.DB, schema, table, column string) (*pos
 	return elements[0], nil
 }
 
-func (p postgresDatabase) Column(db *sql.DB, schema, table, column string) (Element, error) {
-	return p.column(db, schema, table, column)
+func (p postgresDatabase) Column(schema, table, column string) (Element, error) {
+	return p.column(schema, table, column)
 }
 
-func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition, error) {
+func (p postgresDatabase) Definition(schemas ...string) (Definition, error) {
 	createdSchemas := []Schema{}
 	for _, schemaName := range schemas {
-		schema, err := p.schema(db, schemaName)
+		schema, err := p.schema(schemaName)
 		if err == ErrNotFound {
 			continue
 		}
@@ -350,7 +349,7 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 		}
 		sdef, _ := s.(Schema)
 
-		tables, err := p.tables(db, schemaName, "")
+		tables, err := p.tables(schemaName, "")
 		if err != nil {
 			return nil, err
 		}
@@ -361,7 +360,7 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 			}
 			tdef, _ := t.(Table)
 
-			columns, err := p.columns(db, schemaName, tdef.Name, "")
+			columns, err := p.columns(schemaName, tdef.Name, "")
 			if err != nil {
 				return nil, err
 			}
@@ -388,7 +387,7 @@ func (p postgresDatabase) Definition(db *sql.DB, schemas ...string) (Definition,
 	return d, nil
 }
 
-func (p postgresDatabase) Migrations(db *sql.DB, operations []Operation) ([]string, error) {
+func (p postgresDatabase) Migrations(operations []Operation) ([]string, error) {
 	steps := []string{}
 
 	for _, operation := range operations {
@@ -423,10 +422,34 @@ func (p postgresDatabase) Migrations(db *sql.DB, operations []Operation) ([]stri
 	return steps, nil
 }
 
-func (p postgresDatabase) Migrate(db *sql.DB, migrations []string) error {
-	dbx := sqlx.NewDb(db, "postgres")
+func (p postgresDatabase) Migrate(target Definition) error {
+	schemas := target.Schemas()
+	names := make([]string, len(schemas))
+	for idx, s := range schemas {
+		names[idx] = s.Name
+	}
 
-	tx, err := dbx.Beginx()
+	base, err := p.Definition(names...)
+	if err != nil {
+		return err
+	}
+
+	ops, err := OperationsToMatch(base, target)
+	if err != nil {
+		return err
+	}
+
+	migrations, err := p.Migrations(ops)
+	if err != nil {
+		return err
+	}
+
+	return p.migrate(migrations)
+}
+
+func (p postgresDatabase) migrate(migrations []string) error {
+
+	tx, err := p.db.Beginx()
 	if err != nil {
 		return err
 	}
